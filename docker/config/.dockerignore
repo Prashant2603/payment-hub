@@ -1,0 +1,8 @@
+.git
+.gitignore
+.gradle
+build/
+!build/libs/*.jar
+README.md
+docs/
+*.md

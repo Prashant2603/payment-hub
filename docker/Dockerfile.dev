@@ -1,0 +1,22 @@
+FROM openjdk:17-jdk-slim
+
+WORKDIR /app
+
+# Copy Gradle files
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle .
+COPY settings.gradle .
+
+# Make gradlew executable
+RUN chmod +x ./gradlew
+
+# Copy source code
+COPY src ./src
+
+# Build the application
+RUN ./gradlew build -x test
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "/app/build/libs/payment-hub-0.1.0-SNAPSHOT.jar"]
