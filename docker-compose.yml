@@ -10,9 +10,18 @@ services:
       - "8080:8080"
     environment:
       # Previous environment variables
-      - SPRING_DATASOURCE_URL=jdbc:h2:mem:paymenthubdb
-      - SPRING_DATASOURCE_USERNAME=sa
-      - SPRING_DATASOURCE_PASSWORD=password
+      
+      #- SPRING_DATASOURCE_URL=jdbc:h2:mem:paymenthubdb
+      #- SPRING_DATASOURCE_USERNAME=sa
+      #- SPRING_DATASOURCE_PASSWORD=password
+
+       # Update database config for PostgreSQL
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/paymenthub
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
+
       - SPRING_PROFILES_ACTIVE=dev
       # ELK related variables
       - LOGSTASH_HOST=logstash
@@ -22,12 +31,26 @@ services:
       - ./src:/app/src    # For hot reloading in dev
     depends_on:
       - logstash
+      - postgres
     mem_limit: 512m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-dev
+    environment:
+      - POSTGRES_DB=paymenthub
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    mem_limit: 512m
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
@@ -67,3 +90,4 @@ services:
 
 volumes:
   elasticsearch_data:
+  postgres_data:
