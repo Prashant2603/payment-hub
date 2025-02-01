@@ -1,43 +1,80 @@
 version: '3.8'
 
 services:
-  payment-hub:    # Container name from previous setup
+  payment-hub-1:
     build:
       context: .
-      dockerfile: docker/Dockerfile.dev    # Using the dev Dockerfile
-    container_name: payment-hub
-    ports:
-      - "8080:8080"
+      dockerfile: docker/Dockerfile.dev
+    container_name: payment-hub-1
     environment:
-      # Previous environment variables
-      
-      #- SPRING_DATASOURCE_URL=jdbc:h2:mem:paymenthubdb
-      #- SPRING_DATASOURCE_USERNAME=sa
-      #- SPRING_DATASOURCE_PASSWORD=password
-
-       # Update database config for PostgreSQL
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/paymenthub
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
-
-      - SPRING_PROFILES_ACTIVE=dev
-      # ELK related variables
+      - INSTANCE_ID=instance-1
       - LOGSTASH_HOST=logstash
       - LOGSTASH_PORT=5000
-      - JAVA_OPTS=-Xmx512m -Xms256m
-    volumes:
-      - ./src:/app/src    # For hot reloading in dev
+      - LOGBACK_INITIAL_RETRY_DELAY=30000  # Wait 30 seconds before first retry
+      - LOGBACK_MAX_RETRY_DELAY=60000      # Max 60 seconds between retries
     depends_on:
-      - logstash
-      - postgres
-    mem_limit: 512m
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      logstash:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+        
+  payment-hub-2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    container_name: payment-hub-2
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/paymenthub
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - INSTANCE_ID=instance-2
+      - LOGSTASH_HOST=logstash
+      - LOGSTASH_PORT=5000
+      - LOGBACK_INITIAL_RETRY_DELAY=30000  # Wait 30 seconds before first retry
+      - LOGBACK_MAX_RETRY_DELAY=60000      # Max 60 seconds between retries
+    depends_on:
+      logstash:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+
+  payment-hub-3:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    container_name: payment-hub-3
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/paymenthub
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - INSTANCE_ID=instance-3
+      - LOGSTASH_HOST=logstash
+      - LOGSTASH_PORT=5000
+      - LOGBACK_INITIAL_RETRY_DELAY=30000  # Wait 30 seconds before first retry
+      - LOGBACK_MAX_RETRY_DELAY=60000      # Max 60 seconds between retries
+    depends_on:
+      logstash:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-lb
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - payment-hub-1
+      - payment-hub-2
+      - payment-hub-3
 
   postgres:
     image: postgres:15
@@ -75,8 +112,12 @@ services:
       - ./elk/logstash/pipeline:/usr/share/logstash/pipeline
     depends_on:
       - elasticsearch
-    mem_limit: 512m
-
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9600"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.10
     container_name: kibana-dev

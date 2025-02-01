@@ -3,6 +3,9 @@
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
     
+    <property name="INITIAL_RETRY_DELAY" value="${LOGBACK_INITIAL_RETRY_DELAY:-5000}"/>
+    <property name="MAX_RETRY_DELAY" value="${LOGBACK_MAX_RETRY_DELAY:-30000}"/>
+    
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>
@@ -13,8 +16,17 @@
 
     <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
         <destination>${LOGSTASH_HOST:-localhost}:${LOGSTASH_PORT:-5000}</destination>
+        <connectionStrategy>
+            <roundRobin>
+                <connectionTTL>5 minutes</connectionTTL>
+            </roundRobin>
+        </connectionStrategy>
+        <reconnectionDelay>
+            <initial>${INITIAL_RETRY_DELAY}</initial>
+            <maximum>${MAX_RETRY_DELAY}</maximum>
+        </reconnectionDelay>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"app":"payment-hub"}</customFields>
+            <customFields>{"app":"payment-hub","instance":"${INSTANCE_ID:-unknown}"}</customFields>
         </encoder>
     </appender>
 
@@ -24,4 +36,6 @@
     </root>
 
     <logger name="com.example.paymenthub" level="DEBUG"/>
+    <logger name="com.example.paymenthub.controller" level="INFO"/>
+
 </configuration>
