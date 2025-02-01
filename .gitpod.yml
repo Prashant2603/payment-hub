@@ -1,0 +1,25 @@
+# .gitpod.yml
+image:
+  file: .gitpod.Dockerfile
+
+tasks:
+  - init: |
+      ./gradlew build
+  - command: |
+      ./gradlew bootRun
+
+ports:
+  - port: 8080
+    onOpen: open-preview
+  - port: 8081
+    onOpen: ignore
+  - port: 8082
+    onOpen: ignore
+
+vscode:
+  extensions:
+    - vscjava.vscode-java-pack
+    - vscjava.vscode-spring-initializr
+    - redhat.java
+    - pivotal.vscode-spring-boot
+    - gabrielbb.vscode-lombok
