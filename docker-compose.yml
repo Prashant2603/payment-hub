@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  payment-hub:    # Container name from previous setup
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev    # Using the dev Dockerfile
+    container_name: payment-hub
+    ports:
+      - "8080:8080"
+    environment:
+      # Previous environment variables
+      - SPRING_DATASOURCE_URL=jdbc:h2:mem:paymenthubdb
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_PROFILES_ACTIVE=dev
+      # ELK related variables
+      - LOGSTASH_HOST=logstash
+      - LOGSTASH_PORT=5000
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      - ./src:/app/src    # For hot reloading in dev
+    depends_on:
+      - logstash
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    container_name: elasticsearch-dev
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    mem_limit: 1g
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.10
+    container_name: logstash-dev
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./elk/logstash/pipeline:/usr/share/logstash/pipeline
+    depends_on:
+      - elasticsearch
+    mem_limit: 512m
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.10
+    container_name: kibana-dev
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    mem_limit: 512m
+
+volumes:
+  elasticsearch_data:
