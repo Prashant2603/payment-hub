@@ -18,3 +18,22 @@ spring:
 
 server:
   port: 8080
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info,httptrace,loggers
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.example.paymenthub: DEBUG
+    org.springframework.web: INFO
