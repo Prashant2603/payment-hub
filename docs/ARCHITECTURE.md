@@ -72,6 +72,11 @@ flowchart TB
             DB[(PostgreSQL)]
         end
 
+        subgraph "Monitoring Stack"
+            PROM[Prometheus]
+            GRAF[Grafana]
+        end
+
         subgraph "ELK Stack"
             LS[Logstash]
             ES[(Elasticsearch)]
@@ -106,6 +111,11 @@ flowchart TB
     KB--"queries"-->ES
 
     %% Monitoring Flow
+    ACT1--"scrape metrics"-->PROM
+    ACT2--"scrape metrics"-->PROM
+    ACT3--"scrape metrics"-->PROM
+    PROM--"visualize"-->GRAF
+
     PS1 & PC1--"metrics"-->ACT1
     PS2 & PC2--"metrics"-->ACT2
     PS3 & PC3--"metrics"-->ACT3
@@ -114,9 +124,11 @@ flowchart TB
     classDef component fill:#90EE90,stroke:#333,stroke-width:2px
     classDef monitoring fill:#FFE4B5,stroke:#333,stroke-width:2px
     classDef elk fill:#ADD8E6,stroke:#333,stroke-width:2px
+    classDef prometheus fill:#FF7F50,stroke:#333,stroke-width:2px
     classDef lb fill:#FFA07A,stroke:#333,stroke-width:2px
 
     class PC1,PC2,PC3,PS1,PS2,PS3,PR1,PR2,PR3,DB component
     class ACT1,ACT2,ACT3,LOG1,LOG2,LOG3 monitoring
     class LS,ES,KB elk
+    class PROM,GRAF prometheus
     class LB lb

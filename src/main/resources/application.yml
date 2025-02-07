@@ -21,7 +21,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,info,httptrace,loggers
+        include: health,metrics,info,httptrace,loggers,prometheus
+  metrics:
+    tags:
+      application: payment-hub
   endpoint:
     health:
       show-details: always
